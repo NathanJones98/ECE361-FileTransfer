@@ -63,20 +63,22 @@ void main(int argc, char const * argv[]){
 
 	//Begin loop to listen at port
 	printf("Listening at port: %d\n", port);
-
 	while(1){
+
+		//Length of client address
 		socklen_t cli_len = sizeof(cliaddr);
 
 		//return buffer
 		char mssg[BUFFER_SIZE];
 		bzero(mssg, BUFFER_SIZE);
 
-		// receive message from client
+		//Receive message 
 		if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
 			printf("Message was not recieved\n");
 			exit(1);
 		}
 
+		//Print return buffer
 		printf("Client : %s\n", mssg);
 	}
 
