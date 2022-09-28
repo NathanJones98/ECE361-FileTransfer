@@ -7,3 +7,17 @@ Upon execution, the server should:
 2. Receive a message from the client
 a. if the message is “ftp”, reply with a message “yes” to the client.
 b. else, reply with a message “no” to the client. */
+
+//Include statements
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//Networking include statements
+#include <sys/socket.h>
+#include <sys/types.h>
+
+void main(){
+	printf("Hello World");
+	return;
+}

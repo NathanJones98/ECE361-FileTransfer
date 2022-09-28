@@ -9,3 +9,18 @@ b. else, exit
 3. Receive a message from the server:
 a. if the message is “yes”, print out “A file transfer can start.”
 b. else, exit*/
+
+//Include statements
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//Networking include statements
+#include <sys/socket.h>
+#include <sys/types.h>
+
+//Temp Main
+void main(){
+	printf("Hello World 2");
+	return;
+}

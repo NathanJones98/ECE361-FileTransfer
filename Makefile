@@ -1,13 +1,11 @@
 
 # Makefile You should also prepare a makefile that generates the executable file deliver from
 # deliver.c and the executable file server from server.c.
-
-default: server deliver
+CC=gcc
+all: server deliver
 # compile the client program
-deliver: deliver.c
-	gcc deliver.c -o deliver
+deliver: deliver.o
 # compile server program
-server: server.c
-	gcc server.c -o server
+server: server.o
 clean:
-	rm deliver server
+	rm -f *.o deliver server
