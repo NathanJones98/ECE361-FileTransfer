@@ -1,3 +1,3 @@
 # ECE361 File Transfer lab
-Developed by Nathan Jones and 
+Developed by Nathan Jones and Sadra Tonekaboni
 

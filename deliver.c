@@ -20,7 +20,13 @@ b. else, exit*/
 #include <sys/types.h>
 
 //Temp Main
-void main(){
+void main(int argc, char const * argv[]){
+
+	if (argc != 3) {
+		printf("Incorrect usage.\nUsage: deliver <server address> <server port num>\n");
+		return;
+  	}
+	
 	printf("Hello World 2");
 	return;
 }
