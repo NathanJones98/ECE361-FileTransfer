@@ -63,8 +63,8 @@ void main(int argc, char const * argv[]){
 	fseek(binary_file, 0L, SEEK_END);
   
     long int size = ftell(binary_file);
-	rewind(binary_file);
-	
+	fseek(binary_file, 0L, SEEK_SET);
+
 	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
 	int offset = size%FRAGMENT_SIZE;
@@ -173,7 +173,7 @@ void main(int argc, char const * argv[]){
 			printf("loop itteration");
 			if (i < num_packets-1)
 			{
-				fread(fragment,sizeof(fragment),1,binary_file);
+				fread(fragment,sizeof(fragment),1,binary_file+(1000*i));
 				sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
 			}
 
