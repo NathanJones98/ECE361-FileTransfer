@@ -34,13 +34,13 @@ void main(int argc, char const * argv[]){
   	}
 	
 	//Read server address
-	int s_addr = 0;
-	printf("s_addr: %d \n", atoi(argv[1]));
-	s_addr = atoi(argv[1]);
+	//char * s_addr = 0;
+	printf("s_addr: %d \n", argv[1]);
+	//s_addr = argv[1];
 
 	//Read port argument
 	int port = 0;
-	printf("Port: %d \n", atoi(argv[1]));
+	printf("Port: %d \n", atoi(argv[2]));
 	port = atoi(argv[2]);
 
 	//Init the socket addresses
@@ -75,8 +75,8 @@ void main(int argc, char const * argv[]){
 	//Send message
 	char *hello = "Hello from client"; 
 	sendto(sockfd, (const char *)hello, strlen(hello), 
-        MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
-            sizeof(servaddr));
+        MSG_CONFIRM, servinfo->ai_addr,  
+            servinfo->ai_addrlen);
 
 	printf("Hello World");
 	return;
