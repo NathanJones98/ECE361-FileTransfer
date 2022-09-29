@@ -46,17 +46,24 @@ void main(int argc, char const * argv[]){
 	//Init the socket addresses
 	struct sockaddr_in servaddr;
 	struct addrinfo *servinfo;
+	struct addrinfo hints;
+
 	memset(&servaddr, 0, sizeof(servaddr));  
 	memset(&servinfo, 0, sizeof(servinfo)); 
+	memset(&hints, 0 , sizeof (hints));
 
 	//Server settings
 	servaddr.sin_family = AF_INET; 
     servaddr.sin_addr.s_addr = INADDR_ANY; 
     servaddr.sin_port = htons(port);
 
+	//Hints
+	hints.ai_family = AF_INET;
+  	hints.ai_socktype = SOCK_DGRAM;
+
 	//Lookup address via dns
 	int addr_info;
-	if ((addr_info = getaddrinfo(argv[1], argv[2], 0, &servinfo)) < 0) {
+	if ((addr_info = getaddrinfo(argv[1], argv[2], &hints, &servinfo)) < 0) {
 		printf("Lookup via DNS failed\n");
 		exit(1);
 	}
@@ -77,9 +84,6 @@ void main(int argc, char const * argv[]){
 	sendto(sockfd, (const char *)hello, strlen(hello), 
         MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
             sizeof(servaddr));
-
-	printf("Hello World");
-	return;
 
 	printf("Hello World 2");
 	return;
