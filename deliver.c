@@ -68,11 +68,11 @@ void main(int argc, char const * argv[]){
 	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
 	int offset = size%FRAGMENT_SIZE;
-	if (offset = 0)
-		offset = FRAGMENT_SIZE;
+	//if (offset == 0)
+		//offset = FRAGMENT_SIZE;
 
-	unsigned char fragment[FRAGMENT_SIZE];
-
+	char fragment[FRAGMENT_SIZE];
+	
 	char output [2000];
 
 	struct packet_format Packet;
@@ -162,6 +162,7 @@ void main(int argc, char const * argv[]){
 
 	bool re_started = false;
 	int i = 0;
+	char pack_buf[2*FRAGMENT_SIZE];
 	printf("loop begins%d\n",i);
  
 	while ( i<num_packets ){	
@@ -169,24 +170,41 @@ void main(int argc, char const * argv[]){
 	printf("loop itteration: %d", i); 
 	
 		if (!re_started)
-		{
-			printf("loop itteration");
+		{	
+			memset(fragment, 0, FRAGMENT_SIZE);
+			//memset(pack_buf, 0, 2*FRAGMENT_SIZE);
+			printf("loop itteration\n");
 			if (i < num_packets-1)
 			{
-				fread(fragment,sizeof(fragment),1,binary_file+(1000*i));
-				sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
+				int size_ = fread(fragment,sizeof(char),FRAGMENT_SIZE, binary_file);
+				if (size_<1)
+					break;
+				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,FRAGMENT_SIZE,FileName);
+   				printf("header: %s\n",pack_buf);
+				memcpy(pack_buf + header, fragment, size_);
+				//fscanf(binary_file,"%s", fragment);
+				//printf("data: %u\n", fragment);
+				//sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
 			}
 
 			else 
 			{
-				fread(fragment,offset,1,binary_file);
-				sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,offset,FileName,fragment);
+				
+				int size_ = fread(fragment,sizeof(char),offset,binary_file);
+				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,offset,FileName);
+				printf("header: %s\n",pack_buf);
+				if (size_<1)
+					break;
+   				memcpy(pack_buf + header, fragment, size_);
+				//fscanf(binary_file,"%s", fragment);
+				//printf("data: %u\n", fragment);
+				//sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,offset,FileName,fragment);
 			}
-			printf("message changed\n");
+			//printf("message changed to: %s\n",pack_buf);
 		}
 		
 		printf("sending...\n");
-		sendto(sockfd, (const char *)output, strlen(output), 
+		sendto(sockfd, (const char *)pack_buf, strlen(pack_buf), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
 		printf("message sent\n");
@@ -210,7 +228,7 @@ void main(int argc, char const * argv[]){
 				re_started = true;
 			}
 		}
-
+		printf("end of loop\n");
 
 	}
 
