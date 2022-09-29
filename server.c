@@ -18,6 +18,7 @@ b. else, reply with a message “no” to the client. */
 #include <sys/types.h>
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
+#include "packet_format.h"
 
 //Maximum packet size
 #define BUFFER_SIZE 4096

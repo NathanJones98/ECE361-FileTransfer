@@ -1,4 +1,5 @@
-struct packet {
+
+struct packet_format {
     //indicates the total number of fragments of the file
     unsigned int total_frag;
 
@@ -13,4 +14,4 @@ struct packet {
 
     //ex: “lo World!\n”
     char filedata[1000];
-}
+};
