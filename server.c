@@ -25,12 +25,6 @@ b. else, reply with a message “no” to the client. */
 void main(int argc, char const * argv[]){
 	
 	/****************************************Server Input Args********************************************/
-	char name[20];
-    printf("Enter name: ");
-    scanf("%s", name);
-    printf("Your name is %s.", name);
-    return 0;
-	
 	//Check program usage
 	if (argc != 2) {
 		printf("Incorrect usage.\nUsage: server <server port num>\n");
