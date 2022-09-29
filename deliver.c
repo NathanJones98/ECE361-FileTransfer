@@ -24,7 +24,6 @@ b. else, exit*/
 #include <netdb.h>
 #include "packet_format.h"
 //Maximum packet size
-#define BUFFER_SIZE 4096
 #define FRAGMENT_SIZE 1000
 //Temp Main
 void main(int argc, char const * argv[]){
@@ -65,6 +64,7 @@ void main(int argc, char const * argv[]){
   
     long int size = ftell(binary_file);
 	rewind(binary_file);
+	
 	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
 	int offset = size%FRAGMENT_SIZE;
