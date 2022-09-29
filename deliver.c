@@ -30,7 +30,7 @@ b. else, exit*/
 //Maximum packet size
 #define FRAGMENT_SIZE 1000
 
-//Temp Main
+/****************************************Main Loop********************************************/
 void main(int argc, char const * argv[]){
 
 	if (argc != 3) {
@@ -38,6 +38,7 @@ void main(int argc, char const * argv[]){
 		return;
   	}
 	
+	/****************************************Input********************************************/
 	char FileName[255];
 	char * mssg;
     FILE *binary_file;
@@ -46,41 +47,45 @@ void main(int argc, char const * argv[]){
     scanf("%s", FileName);
     printf("\n Filename: ++%s++\n",FileName);
 
-
 	char FilePath [263];
 	strcpy(FilePath, "./deliver_/" );
 	strcat(FilePath,FileName);
 	printf("\n FilePath: ++%s++",FilePath);
 
-
-	if (binary_file = fopen(FilePath,"r"))
-    {
+	/****************************************Open File Inputted********************************************/
+	
+	//Check if file exists
+	if (binary_file = fopen(FilePath,"r")){
         mssg = "ftp"; 
 		printf("\nFile exists");
-    }
-    else 
-	{
-		printf("\nFile does not exists");
+    } else {
+		printf("\nFile does not exist");
         exit(1);
 	}
-
+	
+	//Open file
 	binary_file = fopen(FilePath,"rb");
+
+	/****************************************File Parameters********************************************/
+	//Size
 	fseek(binary_file, 0L, SEEK_END);
-  
     long int size = ftell(binary_file);
 	fseek(binary_file, 0L, SEEK_SET);
 
+	//Total Fragments
 	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
+	//Offset
 	int offset = size%FRAGMENT_SIZE;
 	//if (offset == 0)
 		//offset = FRAGMENT_SIZE;
 
 	char fragment[FRAGMENT_SIZE];
-	
 	char output [2000];
 
+	//Packet struct
 	struct packet_format Packet;
+
 	//memset(&Packet, 0, sizeof(Packet)); 
 	Packet.total_frag = num_packets;
 	Packet.frag_no = 0;
@@ -88,10 +93,7 @@ void main(int argc, char const * argv[]){
 	Packet.filename = FileName;
 	//strcpy(Packet.filename,FileName);
 
-	
-
-
-
+	/****************************************Server Parameters********************************************/
 	//Read server address
 	//char * s_addr = 0;
 	printf("\ns_addr: %d \n", argv[1]);
@@ -101,10 +103,6 @@ void main(int argc, char const * argv[]){
 	int port = 0;
 	printf("Port: %d \n", atoi(argv[2]));
 	port = atoi(argv[2]);
-    
-    
-    
-    
     
 	//Init the socket addresses
 	struct sockaddr_in servaddr;
@@ -124,6 +122,7 @@ void main(int argc, char const * argv[]){
 	hints.ai_family = AF_INET;
   	hints.ai_socktype = SOCK_DGRAM;
 
+	/****************************************DNS lookup********************************************/
 	//Lookup address via dns
 	int addr_info;
 	if ((addr_info = getaddrinfo(argv[1], argv[2], &hints, &servinfo)) < 0) {
@@ -131,6 +130,7 @@ void main(int argc, char const * argv[]){
 		exit(1);
 	}
 
+	/****************************************Server Connection********************************************/
 	//Length of client address
 	int sockfd = 0; 
 	socklen_t ser_len = sizeof(servaddr);
@@ -144,17 +144,19 @@ void main(int argc, char const * argv[]){
     char mssg_IN[20];
 	bzero(mssg_IN, 20);
 	
-//Start time at place where we send first message to server
+//Time at first message to server
 #ifdef TIMER
 	clock_t time = clock();
 #endif
 
+	/****************************************Send Message to server********************************************/
 	sendto(sockfd, (const char *)mssg, strlen(mssg), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
             socklen_t servlen = sizeof(servaddr);      
     printf("FTP message sent\n");
 
+	/****************************************Recieve Message from server********************************************/
     if (recvfrom(sockfd, mssg_IN, 20, 0, (struct sockaddr*)&servaddr, &servlen) < 0) {
 			printf("Message was not recieved\n");
 			exit(1);
@@ -166,11 +168,13 @@ void main(int argc, char const * argv[]){
     else 
         exit (1);
 
+//Time when we recieve message from server
 #ifdef TIMER
   time = clock() - time;
-  printf("The round trip takes %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
+  printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
 #endif
 
+	/****************************************File Trasnfer Main loop********************************************/
 	bool re_started = false;
 	int i = 0;
 	char pack_buf[2*FRAGMENT_SIZE];
@@ -200,7 +204,6 @@ void main(int argc, char const * argv[]){
 
 			else 
 			{
-				
 				int size_ = fread(fragment,sizeof(char),offset,binary_file);
 				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,offset,FileName);
 				printf("header: %s\n",pack_buf);
