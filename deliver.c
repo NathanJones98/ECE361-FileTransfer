@@ -11,11 +11,12 @@ a. if the message is “yes”, print out “A file transfer can start.”
 b. else, exit*/
 
 //Include statements
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
+
 //Networking include statements
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -23,8 +24,12 @@ b. else, exit*/
 #include <netinet/in.h> 
 #include <netdb.h>
 #include "packet_format.h"
+
+//Timer
+#define TIMER
 //Maximum packet size
 #define FRAGMENT_SIZE 1000
+
 //Temp Main
 void main(int argc, char const * argv[]){
 
@@ -139,10 +144,11 @@ void main(int argc, char const * argv[]){
     char mssg_IN[20];
 	bzero(mssg_IN, 20);
 	
-    
+//Start time at place where we send first message to server
+#ifdef TIMER
+	clock_t time = clock();
+#endif
 
-
-	
 	sendto(sockfd, (const char *)mssg, strlen(mssg), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
@@ -159,6 +165,11 @@ void main(int argc, char const * argv[]){
         printf("A file transfer can start.\n"); 
     else 
         exit (1);
+
+#ifdef TIMER
+  time = clock() - time;
+  printf("The round trip takes %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
+#endif
 
 	bool re_started = false;
 	int i = 0;
