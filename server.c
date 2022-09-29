@@ -24,6 +24,13 @@ b. else, reply with a message “no” to the client. */
 
 void main(int argc, char const * argv[]){
 	
+	/****************************************Server Input Args********************************************/
+	char name[20];
+    printf("Enter name: ");
+    scanf("%s", name);
+    printf("Your name is %s.", name);
+    return 0;
+	
 	//Check program usage
 	if (argc != 2) {
 		printf("Incorrect usage.\nUsage: server <server port num>\n");
@@ -35,6 +42,7 @@ void main(int argc, char const * argv[]){
 	printf("Port: %d \n", atoi(argv[1]));
 	port = atoi(argv[1]);
 
+	/****************************************Socket Creation********************************************/
 	//Create IPV4, UDP socket
 	int sockfd = 0; 
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -45,6 +53,7 @@ void main(int argc, char const * argv[]){
         exit(1);
     } 
 
+	/****************************************Server / Client Address********************************************/
 	//Init the socket addresses
 	struct sockaddr_in servaddr, cliaddr;
 	memset(&servaddr, 0, sizeof(servaddr)); 
@@ -61,14 +70,16 @@ void main(int argc, char const * argv[]){
         exit(1); 
     } 
 
+	/****************************************Main Server Loop********************************************/
 	//Begin loop to listen at port
-	printf("Listening at port: %d\n", port);
 	while(1){
+		printf("Listening at port: %d\n", port);
 
+		/****************************************Recieve message from cient********************************************/
 		//Length of client address
 		socklen_t cli_len = sizeof(cliaddr);
 
-		//return buffer
+		//return buffer -> recive message
 		char mssg[BUFFER_SIZE];
 		bzero(mssg, BUFFER_SIZE);
 
@@ -80,6 +91,21 @@ void main(int argc, char const * argv[]){
 
 		//Print return buffer
 		printf("Client : %s\n", mssg);
+
+		/****************************************Send response to client********************************************/
+		//Check message from client
+		char *response;
+		if(strcmp(mssg, "ftp") == 0){
+			response = "yes"; 
+		} else {
+			response = "no"; 
+		}
+
+		if(sendto(sockfd, (const char *)response, strlen(response), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
+			printf("Message was not sent\n");
+		} else {
+			printf("Message: '%s' sent\n", response);
+		}
 	}
 
 	printf("Hello World");
