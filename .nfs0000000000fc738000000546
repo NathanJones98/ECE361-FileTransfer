@@ -33,12 +33,6 @@ void main(int argc, char const * argv[]){
 		return;
   	}
 	
-	char FileName[256];
-    printf("Enter file name: ");
-    scanf("%s", FileName);
-    //fget(FileName,256,stdin);
-    printf("\n Filename: ++%s++",FileName);
-	
 	//Read server address
 	//char * s_addr = 0;
 	printf("s_addr: %d \n", argv[1]);
@@ -50,7 +44,11 @@ void main(int argc, char const * argv[]){
 	port = atoi(argv[2]);
     
     
-    
+    char FileName[20];
+    printf("enter file name:\nftp ");
+    scanf("%s",FileName);
+    //fget(FileName,256,stdin);
+    printf("%s",FileName);
     
     
 	//Init the socket addresses
