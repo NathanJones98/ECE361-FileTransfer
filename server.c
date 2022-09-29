@@ -82,10 +82,10 @@ void main(int argc, char const * argv[]){
 		if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
 			printf("Message was not recieved\n");
 			exit(1);
+		} else {
+			//Print return buffer
+			printf("Client : %s\n", mssg);
 		}
-
-		//Print return buffer
-		printf("Client : %s\n", mssg);
 
 		/****************************************Send response to client********************************************/
 		//Check message from client
@@ -98,8 +98,28 @@ void main(int argc, char const * argv[]){
 
 		if(sendto(sockfd, (const char *)response, strlen(response), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
 			printf("Message was not sent\n");
+			exit(1);
 		} else {
 			printf("Message: '%s' sent\n", response);
+
+			/****************************************File Transfer started********************************************/
+			for (;;) {
+				bzero(mssg, BUFFER_SIZE);
+				if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
+					printf("Message was not recieved\n");
+					exit(1);
+				} else {
+					//Print return buffer
+					printf("Client : %s\n", mssg);
+
+					if(sendto(sockfd, (const char *)response, strlen(response), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
+						printf("Message was not sent\n");
+						exit(1);
+					} else {
+						printf("Message: '%s' sent\n", response);
+					}
+				}
+			}
 		}
 	}
 
