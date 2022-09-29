@@ -64,16 +64,16 @@ void main(int argc, char const * argv[]){
 	fseek(binary_file, 0L, SEEK_END);
   
     long int size = ftell(binary_file);
-
+	rewind(binary_file);
 	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
 	int offset = size%FRAGMENT_SIZE;
 	if (offset = 0)
 		offset = FRAGMENT_SIZE;
 
-	char fragment[FRAGMENT_SIZE];
+	unsigned char fragment[FRAGMENT_SIZE];
 
-	char * output;
+	char output [2000];
 
 	struct packet_format Packet;
 	//memset(&Packet, 0, sizeof(Packet)); 
@@ -163,33 +163,28 @@ void main(int argc, char const * argv[]){
 	bool re_started = false;
 	int i = 0;
 	printf("loop begins%d\n",i);
-	printf("loop begins%d\n",num_packets); 
+ 
 	while ( i<num_packets ){	
-	printf("loop begins%d\n",num_packets); 
-	printf("loop begins%d\n",num_packets); 
-	printf("loop begins%d\n",num_packets); 
-	printf("loop begins%d\n",num_packets); 
-	printf("loop begins%d\n",num_packets); 
-	printf("loop begins%d\n",num_packets); 
-
-	//printf("loop itteration: %d", i); 
+	
+	printf("loop itteration: %d", i); 
+	
 		if (!re_started)
 		{
 			printf("loop itteration");
 			if (i < num_packets-1)
 			{
 				fread(fragment,sizeof(fragment),1,binary_file);
-				sprintf(output,"%d%d%d%s%s",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
+				sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
 			}
 
 			else 
 			{
 				fread(fragment,offset,1,binary_file);
-				sprintf(output,"%d%d%d%s%s",num_packets,i+1,offset,FileName,fragment);
+				sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,offset,FileName,fragment);
 			}
 			printf("message changed\n");
 		}
-
+		
 		printf("sending...\n");
 		sendto(sockfd, (const char *)output, strlen(output), 
             MSG_CONFIRM, servinfo->ai_addr,  
