@@ -13,6 +13,7 @@ b. else, reply with a message “no” to the client. */
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+
 //Networking include statements
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -24,46 +25,53 @@ b. else, reply with a message “no” to the client. */
 #define BUFFER_SIZE 4096
 
 
-
+/****************************************Function for parsing packets********************************************/
 bool Packet_Parcing (char * Packet, struct packet_format *packet_data, FILE *binary_file)
 {
 	char * delimiter = ":";
 
+	//Total Fragments
 	int n_packets =  atoi(strtok(Packet, delimiter));
+	
 	if (n_packets== NULL)
 		return false;
+	
+	//Init server side recieving packet_format struct
 	else if (packet_data->total_frag == 0)
 		packet_data->total_frag = n_packets;
 	
+	//Total Frag check
 	if (packet_data->total_frag != n_packets)
 		return false;
 
-		
+	//Frag Number
 	packet_data->frag_no = atoi(strtok(NULL, delimiter));
 	if (packet_data->frag_no == NULL)
 		return false;
 
+	//Size of packet
 	packet_data->size = atoi(strtok(NULL, delimiter));
 	if (packet_data->size == NULL)
 		return false;
 
+	//Filename
 	packet_data->filename = strtok(NULL, delimiter);
 	if (packet_data->filename == NULL)
 		return false;
 	
+	//Data
 	strcpy(packet_data->filedata , strtok(NULL, delimiter));
 	if (packet_data->filedata == NULL)
 		return false;
 
-	fseek(binary_file, 0L, SEEK_END);
-	fwrite(packet_data->filedata , 1 , strlen(packet_data->filedata) , binary_file );
+	//Finds end of filedata
+	//fseek(binary_file, 0L, SEEK_END);
+	fwrite(packet_data->filedata, 1, strlen(packet_data->filedata), binary_file);
 	
 	return true;
 }
 
-
-
-
+/****************************************Main Loop********************************************/
 void main(int argc, char const * argv[]){
 	
 	/****************************************Server Input Args********************************************/
@@ -114,8 +122,6 @@ void main(int argc, char const * argv[]){
 	FILE *binary_file;
 
 
-
-
 	/****************************************Main Server Loop********************************************/
 	//Begin loop to listen at port
 	while(1){
@@ -154,7 +160,55 @@ void main(int argc, char const * argv[]){
 			printf("Message: '%s' sent\n", response);
 
 			/****************************************File Transfer started********************************************/
-			for (;;) {
+			//file transfer begins
+			while (packet_data.frag_no<packet_data.total_frag){
+				
+				//Init message
+				bzero(mssg, BUFFER_SIZE);
+
+				//Receive message 
+				if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
+					printf("Message was not recieved\n");
+					exit(1);
+				}
+				printf("Client : %s\n", mssg);
+
+				//parse and validate
+				char *response;
+				if(Packet_Parcing (mssg, &packet_data, binary_file)){
+					response = "yes"; 
+				} else {
+					response = "no"; 
+				}
+
+				if(sendto(sockfd, (const char *)response, strlen(response), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
+					printf("Message was not sent\n");
+					exit(1);
+				} else {
+					printf("Message: '%s' sent\n", response);
+				}
+			}
+
+			//Get total size of recieved file
+			fseek(binary_file, 0, SEEK_END); 
+			int file_size = ftell(binary_file); 
+			fseek(binary_file, 0, SEEK_SET);
+
+			//Generate path to file
+			char FilePath [263];
+			strcpy(FilePath, "./receive/" );
+			strcat(FilePath, packet_data.filename);
+			
+			//Create the file
+			FILE * output_file = fopen(FilePath, "w");
+			fwrite(binary_file, file_size, 1, output_file);
+			fclose(output_file);
+
+			//done
+			printf("files transfer completed");
+			
+			/*for (;;) {
+
 				bzero(mssg, BUFFER_SIZE);
 				if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
 					printf("Message was not recieved\n");
@@ -170,45 +224,9 @@ void main(int argc, char const * argv[]){
 						printf("Message: '%s' sent\n", response);
 					}
 				}
-			}
-		}
-	
-
-		//file transfer begins
-		while (packet_data.frag_no<packet_data.total_frag){
-
-			//Receive message 
-			if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
-				printf("Message was not recieved\n");
-				exit(1);
-			}
-			printf("Client : %s\n", mssg);
-
-			//parse and validate
-			char *response;
-			if(Packet_Parcing (mssg, &packet_data, binary_file)){
-				response = "yes"; 
-			} else {
-				response = "no"; 
-			}
+			}*/
 		}
 
-		//get total size
-		fseek(binary_file, 0, SEEK_END); 
-		int file_size = ftell(binary_file); 
-		fseek(binary_file, 0, SEEK_SET);
-
-		//genarate file
-		char FilePath [263];
-		strcpy(FilePath, "./receive/" );
-		strcat(FilePath,packet_data.filename);
-		
-		FILE * output_file = fopen(FilePath, "w");
-		fwrite(binary_file,file_size,1,output_file);
-		fclose(output_file);
-
-		//done
-		printf("files transfer completed");
 	}
 	return;
 }
