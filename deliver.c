@@ -26,7 +26,7 @@ b. else, exit*/
 #include "packet_format.h"
 
 //Timer
-#define TIMER
+#define TIMEOUT_MS      100  
 //Maximum packet size
 #define FRAGMENT_SIZE 1000
 
@@ -59,7 +59,7 @@ void main(int argc, char const * argv[]){
         mssg = "ftp"; 
 		printf("\nFile exists");
     } else {
-		printf("\nFile does not exist");
+		printf("\nFile does not exist\n");
         exit(1);
 	}
 	
@@ -179,7 +179,10 @@ void main(int argc, char const * argv[]){
 	int i = 0;
 	char pack_buf[2*FRAGMENT_SIZE];
 	printf("loop begins%d\n",i);
- 
+	
+    static int timeout = TIMEOUT_MS;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char*)&timeout,sizeof(timeout));
+
 	while ( i<num_packets ){	
 	
 	printf("loop itteration: %d", i); 
@@ -195,7 +198,7 @@ void main(int argc, char const * argv[]){
 				if (size_<1)
 					break;
 				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,FRAGMENT_SIZE,FileName);
-   				printf("header: %s\n",pack_buf);
+   				//printf("header: %s\n",pack_buf);
 				memcpy(pack_buf + header, fragment, size_);
 				//fscanf(binary_file,"%s", fragment);
 				//printf("data: %u\n", fragment);
@@ -206,7 +209,7 @@ void main(int argc, char const * argv[]){
 			{
 				int size_ = fread(fragment,sizeof(char),offset,binary_file);
 				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,offset,FileName);
-				printf("header: %s\n",pack_buf);
+				//printf("header: %s\n",pack_buf);
 				if (size_<1)
 					break;
    				memcpy(pack_buf + header, fragment, size_);
@@ -225,7 +228,7 @@ void main(int argc, char const * argv[]){
 
 		if (recvfrom(sockfd, mssg_IN, 20, 0, (struct sockaddr*)&servaddr, &servlen) < 0) 
 		{
-			printf("Message was not recieved\n");
+			printf("Timeout passed\n");
 			re_started = true;
 		}
 		else
