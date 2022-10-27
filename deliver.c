@@ -31,6 +31,9 @@ b. else, exit*/
 #define FRAGMENT_SIZE 1000
 
 /****************************************Main Loop********************************************/
+
+
+
 void main(int argc, char const * argv[]){
 
 	time_t t;
@@ -147,9 +150,9 @@ void main(int argc, char const * argv[]){
 	bzero(mssg_IN, 20);
 	
 //Time at first message to server
-#ifdef TIMER
-	clock_t time = clock();
-#endif
+//#ifdef TIMER
+	double time = (double)(clock());
+//#endif
 
 	/****************************************Send Message to server********************************************/
 	sendto(sockfd, (const char *)mssg, strlen(mssg), 
@@ -171,10 +174,10 @@ void main(int argc, char const * argv[]){
         exit (1);
 
 //Time when we recieve message from server
-#ifdef TIMER
-  time = clock() - time;
+//#ifdef TIMER
+  time = (double)(clock()) - time;
   printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
-#endif
+//#endif
 
 	/****************************************File Trasnfer Main loop********************************************/
 	bool re_started = false;
@@ -215,22 +218,28 @@ void main(int argc, char const * argv[]){
 			
 		
 	}
-	long long timeout = 0;
-	long long  ratio = 5;
+	float  timeout = 0;
+	int  ratio = 5;
 	i = 0;
 	while (i < num_packets){
-
-		timeout = ratio*(long long)time;
-		
+		//#ifdef TIMER
+		timeout =(((float)time)/1000 ) / CLOCKS_PER_SEC;
+		//#endif
 		
 
 		//printf("sending...\n");
 		sendto(sockfd, (const char *)pack_buf[i], sizeof(pack_buf[i]), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
-		printf("message sent\n");
-		
-		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char*)&timeout,sizeof(timeout));
+		printf("time: %d\n", timeout);
+
+
+		struct timeval tv;
+		tv.tv_sec = 0;
+		tv.tv_usec = timeout;
+		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
+
+
 		if (recvfrom(sockfd, mssg_IN, 20, 0, (struct sockaddr*)&servaddr, &servlen) < 0) 
 		{
 			printf("Timeout passed\n");
@@ -248,10 +257,11 @@ void main(int argc, char const * argv[]){
 			}
 		}
 		//printf("end of loop\n");
-		#ifdef TIMER
-  		time = clock() - time;
+		//#ifdef TIMER
+  		time = (double)(clock()) - time;
+		//#endif
   		//printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
-		#endif
+		
 
 	}
 	char * final = "finished";

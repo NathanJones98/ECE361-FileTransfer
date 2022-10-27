@@ -153,7 +153,7 @@ void main(int argc, char const * argv[]){
 				
 				//Init message
 				bzero(mssg, BUFFER_SIZE);
-
+				printf("listening\n");
 				//Receive message 
 				if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
 					printf("Message was not recieved\n");
@@ -183,6 +183,9 @@ void main(int argc, char const * argv[]){
 						printf("Message: '%s' sent\n", response_);
 					}
 				}
+				else{
+					printf("killed a pakcet\n");
+				}
 			}
 
 			//done
@@ -193,7 +196,7 @@ void main(int argc, char const * argv[]){
 				bzero(mssg, BUFFER_SIZE);
 				if (recvfrom(sockfd, mssg, BUFFER_SIZE, 0, (struct sockaddr*)&cliaddr, &cli_len) < 0) {
 					printf("Message was not recieved\n");
-					exit(1);
+					exit(1);make 
 				} else {
 					//Print return buffer
 					printf("Client : %s\n", mssg);
