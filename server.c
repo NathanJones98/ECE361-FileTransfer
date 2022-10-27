@@ -22,54 +22,27 @@ b. else, reply with a message “no” to the client. */
 #include "packet_format.h"
 
 //Maximum packet size
-#define BUFFER_SIZE 4096
-
+#define BUFFER_SIZE 1000
+#define FRAGMENT_SIZE 1000
 
 /****************************************Function for parsing packets********************************************/
 bool Packet_Parcing (const char * Packet, struct packet_format *packet_data, FILE *binary_file)
-{
+{	
+	
 	char * delimiter = ":";
-
-	//Total Fragments
-	int n_packets =  atoi(strtok(Packet, delimiter));
-	printf("Total Frag\n");
-	if (n_packets== NULL)
-		return false;
 	
-	//Init server side recieving packet_format struct
-	else if (packet_data->total_frag == 1)
-		packet_data->total_frag = n_packets;
-	printf("Total Frag: %d control: %d\n", packet_data->total_frag, n_packets);
-	//Total Frag check
-	if (packet_data->total_frag != n_packets)
-		return false;
-	printf("Total Frag\n");
-	
-	//Frag Number
+	char *backup = malloc (sizeof(char) * FRAGMENT_SIZE);
+	memcpy(backup, Packet,FRAGMENT_SIZE);
+	packet_data->total_frag = atoi(strtok(backup, delimiter));
 	packet_data->frag_no = atoi(strtok(NULL, delimiter));
-	if (packet_data->frag_no == NULL)
-		return false;
-	printf("Frag #\n");
-	
-	//Size of packet
 	packet_data->size = atoi(strtok(NULL, delimiter));
-	if (packet_data->size == NULL)
-		return false;
-	
-	printf("Size\n");
-	//Filename
 	packet_data->filename = strtok(NULL, delimiter);
-	if (packet_data->filename == NULL)
-		return false;
-	printf("FileName\n");
+
+	//printf("File Data\n");
 	
-	//Data
-	strcpy(packet_data->filedata , strtok(NULL, delimiter));
-	if (packet_data->filedata == NULL)
-		return false;
-	printf("Data\n");
-	
+	memcpy(packet_data->filedata, Packet+(FRAGMENT_SIZE - packet_data->size), packet_data->size);
 	//Opens a file to write to with the file name
+	//printf("making file: %s\n",packet_data->filename);
 	char FilePath [263];
 	strcpy(FilePath, "./server_/" );
 	strcat(FilePath, packet_data->filename);
@@ -78,11 +51,11 @@ bool Packet_Parcing (const char * Packet, struct packet_format *packet_data, FIL
 	//printf("Size of file data: %d\n", strlen(packet_data->filedata));
 	//printf("File Data: %s\n", packet_data->filedata);
 	
-	fwrite(packet_data->filedata, packet_data->size, packet_data->size, binary_file);
+	fwrite(packet_data->filedata,packet_data->size, 1, binary_file);
 	//fwrite(fragment_binary, 1, strlen(fragment_binary), binary_file);
 	//remove(packet_data->filename)
 
-	printf("Write\n");
+	//printf("Write\n");
 	fclose(binary_file);
 	return true;
 }
@@ -186,20 +159,29 @@ void main(int argc, char const * argv[]){
 					printf("Message was not recieved\n");
 					exit(1);
 				}
-				printf("\n\nClient message: %s\n\n", mssg);
+				//printf("\n\nClient message: %s\n\n", mssg);
 
-				//parse and validate
-				char *response_;
-				if(Packet_Parcing(mssg, &packet_data, binary_file)){
-					response_ = "yes"; 
-				} else {
-					response_ = "no"; 
+				if(strcmp(mssg, "finished") == 0){
+					break;
 				}
-				printf("%s\n",response_);
-				if(sendto(sockfd, (const char *)response_, strlen(response_), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
-					printf("Message was not sent\n");
-				} else {
-					printf("Message: '%s' sent\n", response_);
+				response = "yes"; 
+
+				int ran = rand()%10;
+
+				if (ran!=5){
+					//parse and validate
+					char *response_;
+					if(Packet_Parcing(mssg, &packet_data, binary_file)){
+						response_ = "yes"; 
+					} else {
+						response_ = "no"; 
+					}
+					printf("%s\n",response_);
+					if(sendto(sockfd, (const char *)response_, strlen(response_), MSG_CONFIRM, (struct sockaddr*)&cliaddr, cli_len) < 0){
+						printf("Message was not sent\n");
+					} else {
+						printf("Message: '%s' sent\n", response_);
+					}
 				}
 			}
 

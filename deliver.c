@@ -25,14 +25,16 @@ b. else, exit*/
 #include <netdb.h>
 #include "packet_format.h"
 
-//Timer
-#define TIMEOUT_MS      100  
+
+ 
 //Maximum packet size
 #define FRAGMENT_SIZE 1000
 
 /****************************************Main Loop********************************************/
 void main(int argc, char const * argv[]){
 
+	time_t t;
+	srand((unsigned) time(&t));
 	if (argc != 3) {
 		printf("Incorrect usage.\nUsage: deliver <server address> <server port num>\n");
 		return;
@@ -73,21 +75,21 @@ void main(int argc, char const * argv[]){
 	fseek(binary_file, 0L, SEEK_SET);
 
 	//Total Fragments
-	int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
+	//int num_packets = (size + FRAGMENT_SIZE-1) / FRAGMENT_SIZE;
 
 	//Offset
-	int offset = size%FRAGMENT_SIZE;
+	//int offset = size%FRAGMENT_SIZE;
 	//if (offset == 0)
 		//offset = FRAGMENT_SIZE;
 
-	char fragment[FRAGMENT_SIZE];
-	char output [2000];
+	
+	//char output [2000];
 
 	//Packet struct
 	struct packet_format Packet;
-
+	int estimated_num_packets = 1 + (size /(FRAGMENT_SIZE- (4*sizeof(char)+ 3*sizeof(int) + strlen(FileName))));
 	//memset(&Packet, 0, sizeof(Packet)); 
-	Packet.total_frag = num_packets;
+	Packet.total_frag = estimated_num_packets;
 	Packet.frag_no = 0;
 	Packet.size = 0;
 	Packet.filename = FileName;
@@ -176,79 +178,86 @@ void main(int argc, char const * argv[]){
 
 	/****************************************File Trasnfer Main loop********************************************/
 	bool re_started = false;
+	
+	char pack_buf[estimated_num_packets][FRAGMENT_SIZE];
+	//printf("loop begins%d\n",i);
+	
+    //static int timeout = TIMEOUT_MS;
+    //setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char*)&timeout,sizeof(timeout));
+	char fragment[FRAGMENT_SIZE];
+	int bytes_sent = 0;
+	int num_packets = 0;
 	int i = 0;
-	char pack_buf[2*FRAGMENT_SIZE];
-	printf("loop begins%d\n",i);
+	while ( bytes_sent<size ){	
 	
-    static int timeout = TIMEOUT_MS;
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char*)&timeout,sizeof(timeout));
-
-	while ( i<num_packets ){	
-	
-	printf("loop itteration: %d", i); 
-	
-		if (!re_started)
-		{	
-			memset(fragment, 0, FRAGMENT_SIZE);
-			//memset(pack_buf, 0, 2*FRAGMENT_SIZE);
-			printf("loop itteration\n");
-			if (i < num_packets-1)
-			{
-				int size_ = fread(fragment,sizeof(char),FRAGMENT_SIZE, binary_file);
-				if (size_<1)
-					break;
-				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,FRAGMENT_SIZE,FileName);
-   				//printf("header: %s\n",pack_buf);
-				memcpy(pack_buf + header, fragment, size_);
-				//fscanf(binary_file,"%s", fragment);
-				//printf("data: %u\n", fragment);
-				//sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,FRAGMENT_SIZE,FileName,fragment);
-			}
-
-			else 
-			{
-				int size_ = fread(fragment,sizeof(char),offset,binary_file);
-				unsigned int header = sprintf(pack_buf, "%d:%d:%d:%s:", num_packets,i+1,offset,FileName);
-				//printf("header: %s\n",pack_buf);
-				if (size_<1)
-					break;
-   				memcpy(pack_buf + header, fragment, size_);
-				//fscanf(binary_file,"%s", fragment);
-				//printf("data: %u\n", fragment);
-				//sprintf(output,"%d:%d:%d:%s:%u",num_packets,i+1,offset,FileName,fragment);
-			}
-			//printf("message changed to: %s\n",pack_buf);
-		}
 		
-		printf("sending...\n");
-		sendto(sockfd, (const char *)pack_buf, strlen(pack_buf), 
+		//printf("loop itteration: %d\n", i); 
+	
+		
+		memset(fragment, 0, FRAGMENT_SIZE);
+		//memset(pack_buf, 0, 2*FRAGMENT_SIZE);
+		//printf("loop itteration\n");
+			
+				
+		unsigned int header = sprintf(pack_buf[num_packets], "%d:%d:%d:%s:", estimated_num_packets,i+1,(FRAGMENT_SIZE- (4*sizeof(char)+ 3*sizeof(int) + strlen(FileName))),FileName);
+		header = sprintf(pack_buf[num_packets], "%d:%d:%d:%s:", estimated_num_packets,i+1,FRAGMENT_SIZE - header,FileName);
+		//printf("header created\n");
+		int size_ = fread(fragment,sizeof(char),FRAGMENT_SIZE-header, binary_file);
+		//printf("data created\n");
+		if (size_<1)
+			break;
+				
+   		//printf("header: %s\n",pack_buf);
+		memcpy(pack_buf[num_packets] + header, fragment, size_ );
+		num_packets++;
+		bytes_sent += FRAGMENT_SIZE-header;
+		i++;
+			
+		
+	}
+	long long timeout = 0;
+	long long  ratio = 5;
+	i = 0;
+	while (i < num_packets){
+
+		timeout = ratio*(long long)time;
+		
+		
+
+		//printf("sending...\n");
+		sendto(sockfd, (const char *)pack_buf[i], sizeof(pack_buf[i]), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
 		printf("message sent\n");
-
+		
+		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,(char*)&timeout,sizeof(timeout));
 		if (recvfrom(sockfd, mssg_IN, 20, 0, (struct sockaddr*)&servaddr, &servlen) < 0) 
 		{
 			printf("Timeout passed\n");
-			re_started = true;
 		}
 		else
 		{
 			if (strcmp("yes", mssg_IN)==0) 
 			{
-        		printf("A packet transfer was confirmed."); 
+        		printf("A packet transfer was confirmed.\n"); 
 				i++;
-				re_started = false;
 			}
     		else 
 			{
-				printf("A packet transfer was not confirmed.");
-				re_started = true;
+				printf("A packet transfer was not confirmed.\n");
 			}
 		}
-		printf("end of loop\n");
+		//printf("end of loop\n");
+		#ifdef TIMER
+  		time = clock() - time;
+  		//printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
+		#endif
 
 	}
-
-	printf("Hello World 2");
+	char * final = "finished";
+	sendto(sockfd, (const char *)pack_buf[i], sizeof(pack_buf[i]), 
+            MSG_CONFIRM, servinfo->ai_addr,  
+            servinfo->ai_addrlen);
+	printf("done, closing\n");
 	return;
 }
