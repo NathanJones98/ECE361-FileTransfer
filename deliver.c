@@ -175,8 +175,8 @@ void main(int argc, char const * argv[]){
 
 //Time when we recieve message from server
 //#ifdef TIMER
-  time = (double)(clock()) - time;
-  printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
+	time = (double)(clock()) - time;
+	printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
 //#endif
 
 	/****************************************File Trasnfer Main loop********************************************/
@@ -223,15 +223,18 @@ void main(int argc, char const * argv[]){
 	i = 0;
 	while (i < num_packets){
 		//#ifdef TIMER
-		timeout =(((float)time)/1000 ) / CLOCKS_PER_SEC;
+		timeout =((float)time * 1000) / CLOCKS_PER_SEC;
+		//printf("Round trip time: %.3f ms\n", ((float)time * 1000) / CLOCKS_PER_SEC);
 		//#endif
 		
-
+		printf("\n\n Sending Packet\n", i);
 		//printf("sending...\n");
 		sendto(sockfd, (const char *)pack_buf[i], sizeof(pack_buf[i]), 
             MSG_CONFIRM, servinfo->ai_addr,  
             servinfo->ai_addrlen);
-		printf("time: %d\n", timeout);
+
+		printf("Sent Packet\n", i);
+		//printf("time: %d\n", timeout);
 
 
 		struct timeval tv;
@@ -239,10 +242,11 @@ void main(int argc, char const * argv[]){
 		tv.tv_usec = timeout;
 		setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv));
 
-
+		printf("\n\n Waiting for Ack\n", i);
 		if (recvfrom(sockfd, mssg_IN, 20, 0, (struct sockaddr*)&servaddr, &servlen) < 0) 
 		{
-			printf("Timeout passed\n");
+			printf("Timeout passed, Packet: %d \n", i);
+			printf("A packet transfer was not confirmed, sending again.\n");
 		}
 		else
 		{
